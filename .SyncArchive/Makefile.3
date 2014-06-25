@@ -1,0 +1,22 @@
+CC = gcc
+CFLAGS = -std=gnu99 -pipe -O2 -Wall
+LDFLAGS = -pipe -Wall
+LDLIBS = -lfftw3 -lm
+
+SOURCES = prtd.c dynprtd.c dynprtd_helpers.o
+OBJECTS = $(SOURCES:.c=.o)
+EXECS = prtd dynprtd
+
+all: $(SOURCES) $(EXECS)
+
+prtd: prtd.o
+	$(CC) -o $@ $(LDFLAGS) $^ $(LDLIBS)
+
+dynprtd: dynprtd.o dynprtd_helpers.o
+	$(CC) -o $@ $(LDFLAGS) $^ $(LDLIBS)
+
+.c.o:
+	$(CC) -o $@ $(CFLAGS) -c $<
+
+clean:
+	rm *.o $(EXECS)
