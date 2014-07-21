@@ -1,0 +1,9 @@
+# Executables
+prtd_2ch
+prtd_1ch
+
+# Object files
+*.o
+
+# Backups
+*.bak
