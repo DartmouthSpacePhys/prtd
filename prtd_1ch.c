@@ -47,9 +47,12 @@ static struct header_info {
 } header;
 
 unsigned short *samples;
-double fft_samples1[1024], fft_samples2[1024], fft_samples3[1024], fft_samples4[1024];
-double out1[1024], out2[1024], out3[1024], out4[1024];
-double hann[1024];
+//double fft_samples1[1024], fft_samples2[1024], fft_samples3[1024], fft_samples4[1024];
+double *fft_samples1, *fft_samples2, *fft_samples3, *fft_samples4;
+//double out1[1024], out2[1024], out3[1024], out4[1024];
+double *out1, *out2, *out3, *out4; 
+//doube hann[1024];
+double *hann;
 int total_samples;
 fftw_plan plan_forward1, plan_forward2, plan_forward3, plan_forward4;
 
@@ -79,6 +82,18 @@ int main(int argc, char **argv) {
 	char outstring1[100];
 	FILE *in, *image1, *image2, *image3, *image4, *out;
 	struct parsed_options options;
+
+	hann = fftw_alloc_real(1024);
+
+	fft_samples1 = 	fftw_alloc_real(1024);
+	fft_samples2 = 	fftw_alloc_real(1024);	
+	fft_samples3 = 	fftw_alloc_real(1024);
+	fft_samples4 = 	fftw_alloc_real(1024);
+
+	out1 = fftw_alloc_real(1024);
+	out2 = fftw_alloc_real(1024);
+	out3 = fftw_alloc_real(1024);
+	out4 = fftw_alloc_real(1024);
 
 	umask(000);
 
@@ -143,10 +158,10 @@ int main(int argc, char **argv) {
 	}
 
 	/* initialize the fftw3 plans */
-	plan_forward1 = fftw_plan_r2r_1d(1024, fft_samples1, out1, FFTW_R2HC, FFTW_MEASURE | FFTW_UNALIGNED);
-	plan_forward2 = fftw_plan_r2r_1d(1024, fft_samples2, out2, FFTW_R2HC, FFTW_MEASURE | FFTW_UNALIGNED);
-	plan_forward3 = fftw_plan_r2r_1d(1024, fft_samples3, out3, FFTW_R2HC, FFTW_MEASURE | FFTW_UNALIGNED);
-	plan_forward4 = fftw_plan_r2r_1d(1024, fft_samples4, out4, FFTW_R2HC, FFTW_MEASURE | FFTW_UNALIGNED);
+	plan_forward1 = fftw_plan_r2r_1d(1024, fft_samples1, out1, FFTW_R2HC, FFTW_MEASURE );
+	plan_forward2 = fftw_plan_r2r_1d(1024, fft_samples2, out2, FFTW_R2HC, FFTW_MEASURE );
+	plan_forward3 = fftw_plan_r2r_1d(1024, fft_samples3, out3, FFTW_R2HC, FFTW_MEASURE );
+	plan_forward4 = fftw_plan_r2r_1d(1024, fft_samples4, out4, FFTW_R2HC, FFTW_MEASURE );
 
 
 	while (1) {
@@ -312,7 +327,7 @@ void read_new_samples(void) {
 
 /*********** fft_new_samples() ***********************/
 void fft_new_samples(void) {
-	int i;
+	int i = 0;
 	double mean1, mean2, mean3, mean4;
 
 	mean1 = 0;
@@ -321,16 +336,29 @@ void fft_new_samples(void) {
 	mean4 = 0;
 	double shift[4];
 	// sort from 12341234 order in samples into channel arrays
+ 	/* for (i = 0; i < 1024 ; i += 1) { */
+	/* 	fft_samples1[i] = samples[i]; */
+	/* 	mean1 += fft_samples1[i]; */
+	/* 	fft_samples2[i] = samples[i]; */
+	/* 	mean2 += fft_samples2[i]; */
+	/* 	fft_samples3[i] = samples[i]; */
+	/* 	mean3 += fft_samples3[i]; */
+	/* 	fft_samples4[i] = samples[i]; */
+	/* 	mean4 += fft_samples4[i]; */
+	/* 	//fprintf(stderr,"%3d %u %u %u %u\n",i/4,samples[i],samples[i+1],samples[i+2],samples[i+3]); */
+	/* 	//printf("%d %lf\n",i/4,fft_samples[i/4]); */
+	/* } */
+
 	for (i = 0; i < 1024 ; i += 1) {
-		fft_samples1[i] = samples[i];
-		mean1 += fft_samples1[i];
-		fft_samples2[i] = samples[i];
-		mean2 += fft_samples2[i];
-		fft_samples3[i] = samples[i];
-		mean3 += fft_samples3[i];
-		fft_samples4[i] = samples[i];
-		mean4 += fft_samples4[i];
-		//fprintf(stderr,"%3d %u %u %u %u\n",i/4,samples[i],samples[i+1],samples[i+2],samples[i+3]);
+	  fft_samples1[i] = ((double)samples[i]) * hann[i];
+	  mean1 += fft_samples1[i];
+	  fft_samples2[i] = ((double)samples[i]) * hann[i];
+	  mean2 += fft_samples2[i];
+	  fft_samples3[i] = ((double)samples[i]) * hann[i];
+	  mean3 += fft_samples3[i];
+	  fft_samples4[i] = ((double)samples[i]) * hann[i];
+	  mean4 += fft_samples4[i];
+	  //fprintf(stderr,"%3d %u %u %u %u\n",i/4,samples[i],samples[i+1],samples[i+2],samples[i+3]);
 		//printf("%d %lf\n",i/4,fft_samples[i/4]);
 	}
 	mean1 /= 1024;
@@ -344,14 +372,14 @@ void fft_new_samples(void) {
 		fft_samples4[i] -= mean4;
 	}
 
-	// Hann window - why doesn't this work?
-/*	for (i = 0; i < 1024; i++) {
-		fft_samples1[i] *= hann[i];
-		fft_samples2[i] *= hann[i];
-		fft_samples3[i] *= hann[i];
-		fft_samples4[i] *= hann[i];
-	}
-*/
+	/* for (i = 0; i < 1024; i++) { */
+	/* 	fft_samples1[i] *= hann[i]; */
+	/* 	fft_samples2[i] *= hann[i]; */
+	/* 	fft_samples3[i] *= hann[i]; */
+	/* 	fft_samples4[i] *= hann[i]; */
+	/* } */
+
+
 
 	fftw_execute(plan_forward1);
 	fftw_execute(plan_forward2);
@@ -370,7 +398,7 @@ void fft_new_samples(void) {
 				* out3[1024 - i])) + 0.5;
 		out4[i] = 10* log10 (sqrt(out4[i] * out4[i] + out4[1024 - i]
 				* out4[1024 - i])) + 0.5;
-		//printf("%3d   %15.5f\n",i,out[i]);
+		//		printf("%3d   %15.5f\n",i,out1[i]);
 	}
 	shift[0] = 20-(out1[3]+out1[4])/2;
 	shift[1] = 20-(out2[3]+out2[4])/2;

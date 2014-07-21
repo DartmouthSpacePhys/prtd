@@ -47,9 +47,12 @@ static struct header_info {
 } header;
 
 unsigned short *samples;
-double fft_samples1[1024], fft_samples2[1024], fft_samples3[1024], fft_samples4[1024];
-double out1[1024], out2[1024], out3[1024], out4[1024];
-double hann[1024];
+//double fft_samples1[1024], fft_samples2[1024], fft_samples3[1024], fft_samples4[1024];
+double *fft_samples1, *fft_samples2, *fft_samples3, *fft_samples4;
+//double out1[1024], out2[1024], out3[1024], out4[1024];
+double *out1, *out2, *out3, *out4; 
+//doube hann[1024];
+double *hann;
 int total_samples;
 fftw_plan plan_forward1, plan_forward2, plan_forward3, plan_forward4;
 
@@ -79,6 +82,18 @@ int main(int argc, char **argv) {
 	char outstring1[100];
 	FILE *in, *image1, *image2, *image3, *image4, *out;
 	struct parsed_options options;
+
+	hann = fftw_alloc_real(1024);
+
+	fft_samples1 = 	fftw_alloc_real(1024);
+	fft_samples2 = 	fftw_alloc_real(1024);	
+	fft_samples3 = 	fftw_alloc_real(1024);
+	fft_samples4 = 	fftw_alloc_real(1024);
+
+	out1 = fftw_alloc_real(1024);
+	out2 = fftw_alloc_real(1024);
+	out3 = fftw_alloc_real(1024);
+	out4 = fftw_alloc_real(1024);
 
 	umask(000);
 
@@ -283,24 +298,24 @@ void read_new_samples(void) {
 		usleep(1e4);
 		read_new_samples();
 	} else {
-//		printf("\nReading new samples");
-		/*
-		 printf("\nHeader Info: (%d bytes)",sizeof(header));
-		 printf("\n\tSite ID: %s",header.site_id);
-		 printf("\n\tNum Channels: %d",header.num_channels);
-		 printf("\n\tNum Samples: %d",header.num_samples);
-		 printf("\n\tNum Read: %d",header.num_read);
-		 if( header.num_read==header.num_channels*header.num_samples )
-		 printf(" OK");
-		 else
-		 printf(" Missing Samples!");
-		 printf("\n\tSample Frequency: %.3f MHz",header.sample_frequency/1e6);
-		 printf("\n\tTime Between Acquisitions: %.3fs",header.time_between_acquisitions);
-		 printf("\n\tAcquisition Time: %lu --> (UT) %s",header.start_time,asctime(gmtime(&header.start_time)));
-		 printf("\tAcquistition Time: %lu and %luus",header.start_timeval.tv_sec,header.start_timeval.tv_usec);
-		 printf("\n\tByte Packing: %d",header.byte_packing);
-		 printf("\n\tData Collection Code Version: %.1f",header.code_version);
-		 */
+		/* printf("\nReading new samples"); */
+
+		/*  printf("\nHeader Info: (%d bytes)",sizeof(header)); */
+		/*  printf("\n\tSite ID: %s",header.site_id); */
+		/*  printf("\n\tNum Channels: %d",header.num_channels); */
+		/*  printf("\n\tNum Samples: %d",header.num_samples); */
+		/*  printf("\n\tNum Read: %d",header.num_read); */
+		/*  if( header.num_read==header.num_channels*header.num_samples ) */
+		/*  printf(" OK"); */
+		/*  else */
+		/*  printf(" Missing Samples!"); */
+		/*  printf("\n\tSample Frequency: %.3f MHz",header.sample_frequency/1e6); */
+		/*  printf("\n\tTime Between Acquisitions: %.3fs",header.time_between_acquisitions); */
+		/*  printf("\n\tAcquisition Time: %lu --> (UT) %s",header.start_time,asctime(gmtime(&header.start_time))); */
+		/*  printf("\tAcquistition Time: %lu and %luus",header.start_timeval.tv_sec,header.start_timeval.tv_usec); */
+		/*  printf("\n\tByte Packing: %d",header.byte_packing); */
+		/*  printf("\n\tData Collection Code Version: %.1f",header.code_version); */
+
 		total_samples = header.num_channels * header.num_samples;
 
 		old_sec = header.start_timeval.tv_sec;
@@ -321,16 +336,29 @@ void fft_new_samples(void) {
 	mean4 = 0;
 	double shift[4];
 	// sort from 12341234 order in samples into channel arrays
+	/* for (i = 0; i < 1024*2 ; i += 2) { */
+	/* 	fft_samples1[i/2] = samples[i]; */
+	/* 	mean1 += fft_samples1[i/2]; */
+	/* 	fft_samples2[i/2] = samples[i+1]; */
+	/* 	mean2 += fft_samples2[i/2]; */
+	/* 	fft_samples3[i/2] = samples[i]; */
+	/* 	mean3 += fft_samples3[i/2]; */
+	/* 	fft_samples4[i/2] = samples[i+1]; */
+	/* 	mean4 += fft_samples4[i/2]; */
+	/* 	//fprintf(stderr,"%3d %u %u %u %u\n",i/4,samples[i],samples[i+1],samples[i+2],samples[i+3]); */
+	/* 	//printf("%d %lf\n",i/4,fft_samples[i/4]); */
+	/* } */
+
 	for (i = 0; i < 1024*2 ; i += 2) {
-		fft_samples1[i/2] = samples[i];
-		mean1 += fft_samples1[i/2];
-		fft_samples2[i/2] = samples[i+1];
-		mean2 += fft_samples2[i/2];
-		fft_samples3[i/2] = samples[i];
-		mean3 += fft_samples3[i/2];
-		fft_samples4[i/2] = samples[i+1];
-		mean4 += fft_samples4[i/2];
-		//fprintf(stderr,"%3d %u %u %u %u\n",i/4,samples[i],samples[i+1],samples[i+2],samples[i+3]);
+	  fft_samples1[i/2] = ((double)samples[i]) * hann[i/2];
+	  mean1 += fft_samples1[i/2];
+	  fft_samples2[i/2] = ((double)samples[i+1]) * hann[i/2];
+	  mean2 += fft_samples2[i/2];
+	  fft_samples3[i/2] = ((double)samples[i]) * hann[i/2];
+	  mean3 += fft_samples3[i/2];
+	  fft_samples4[i/2] = ((double)samples[i+1]) * hann[i/2];
+	  mean4 += fft_samples4[i/2];
+	  //fprintf(stderr,"%3d %u %u %u %u\n",i/4,samples[i],samples[i+1],samples[i+2],samples[i+3]);
 		//printf("%d %lf\n",i/4,fft_samples[i/4]);
 	}
 	mean1 /= 1024;
@@ -345,13 +373,13 @@ void fft_new_samples(void) {
 	}
 
 	// Hann window - why doesn't this work?
-/*	for (i = 0; i < 1024; i++) {
-		fft_samples1[i] *= hann[i];
-		fft_samples2[i] *= hann[i];
-		fft_samples3[i] *= hann[i];
-		fft_samples4[i] *= hann[i];
-	}
-*/
+	/* for (i = 0; i < 1024; i++) { */
+	/* 	fft_samples1[i] *= hann[i]; */
+	/* 	fft_samples2[i] *= hann[i]; */
+	/* 	fft_samples3[i] *= hann[i]; */
+	/* 	fft_samples4[i] *= hann[i]; */
+	/* } */
+
 
 	fftw_execute(plan_forward1);
 	fftw_execute(plan_forward2);

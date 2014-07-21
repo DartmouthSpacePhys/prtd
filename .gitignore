@@ -1,6 +1,7 @@
 # Executables
 prtd_2ch
 prtd_1ch
+prtd
 
 # Object files
 *.o

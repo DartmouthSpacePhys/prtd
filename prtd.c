@@ -47,9 +47,12 @@ static struct header_info {
 } header;
 
 unsigned short *samples;
-double fft_samples1[1024], fft_samples2[1024], fft_samples3[1024], fft_samples4[1024];
-double out1[1024], out2[1024], out3[1024], out4[1024];
-double hann[1024];
+//double fft_samples1[1024], fft_samples2[1024], fft_samples3[1024], fft_samples4[1024];
+double *fft_samples1, *fft_samples2, *fft_samples3, *fft_samples4;
+//double out1[1024], out2[1024], out3[1024], out4[1024];
+double *out1, *out2, *out3, *out4; 
+//doube hann[1024];
+double *hann;
 int total_samples;
 fftw_plan plan_forward1, plan_forward2, plan_forward3, plan_forward4;
 
@@ -79,6 +82,18 @@ int main(int argc, char **argv) {
 	char outstring1[100];
 	FILE *in, *image1, *image2, *image3, *image4, *out;
 	struct parsed_options options;
+
+	hann = fftw_alloc_real(1024);
+
+	fft_samples1 = 	fftw_alloc_real(1024);
+	fft_samples2 = 	fftw_alloc_real(1024);	
+	fft_samples3 = 	fftw_alloc_real(1024);
+	fft_samples4 = 	fftw_alloc_real(1024);
+
+	out1 = fftw_alloc_real(1024);
+	out2 = fftw_alloc_real(1024);
+	out3 = fftw_alloc_real(1024);
+	out4 = fftw_alloc_real(1024);
 
 	umask(000);
 
@@ -322,13 +337,13 @@ void fft_new_samples(void) {
 	double shift[4];
 	// sort from 12341234 order in samples into channel arrays
 	for (i = 0; i < 1024* 4 ; i += 4) {
-		fft_samples1[i / 4] = samples[i];
+		fft_samples1[i / 4] = samples[i] * hann[i/4];
 		mean1 += fft_samples1[i / 4];
-		fft_samples2[i / 4] = samples[i + 1];
+		fft_samples2[i / 4] = samples[i + 1] * hann[i/4];
 		mean2 += fft_samples2[i / 4];
-		fft_samples3[i / 4] = samples[i + 2];
+		fft_samples3[i / 4] = samples[i + 2] * hann[i/4];
 		mean3 += fft_samples3[i / 4];
-		fft_samples4[i / 4] = samples[i + 3];
+		fft_samples4[i / 4] = samples[i + 3] * hann[i/4];
 		mean4 += fft_samples4[i / 4];
 		//fprintf(stderr,"%3d %u %u %u %u\n",i/4,samples[i],samples[i+1],samples[i+2],samples[i+3]);
 		//printf("%d %lf\n",i/4,fft_samples[i/4]);
