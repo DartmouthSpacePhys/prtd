@@ -283,7 +283,7 @@ void read_new_samples(void) {
 	sprintf(instring,"%s/latest_acquisition.data",data_dir);
 	in = fopen(instring, "r");
 	fread(&header, sizeof(header), 1, in);
-
+	
 	if (samples != NULL)
 		free(samples);
 	samples = malloc(2* header .num_read);
