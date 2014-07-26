@@ -20,12 +20,15 @@
 #include <sys/stat.h>
 
 struct parsed_options {
+        int numchan;
 	char *filename;
 	char *conffile;
 	char *mondir;
 	char *tmpdir;
 	char *agc;
 	double value;
+
+        int windowing;
 };
 
 int read_input_file(void);
@@ -73,7 +76,7 @@ int write_data = 0;
 unsigned long old_sec = 0, old_usec = 0;
 
 void read_new_samples(void);
-void fft_new_samples(void);
+void fft_new_samples(struct parsed_options *);
 void rescale_images(void);
 
 int main(int argc, char **argv) {
@@ -168,7 +171,7 @@ int main(int argc, char **argv) {
 		/* read in the new data */
 		read_new_samples();
 		/* fft the new data */
-		fft_new_samples();
+		fft_new_samples(&options);
 
 		sprintf(instring,"%s/hf2_display_running",tmp_dir);
 		in = fopen(instring, "r");
@@ -326,8 +329,15 @@ void read_new_samples(void) {
 }
 
 /*********** fft_new_samples() ***********************/
-void fft_new_samples(void) {
+void fft_new_samples(struct parsed_options *o) {
 	int i;
+	
+	int numchan = o->numchan;
+
+	int ind_chan2 = 1 % numchan;
+	int ind_chan3 = 2 % numchan;
+	int ind_chan4 = 3 % numchan;
+
 	double mean1, mean2, mean3, mean4;
 
 	mean1 = 0;
@@ -336,17 +346,32 @@ void fft_new_samples(void) {
 	mean4 = 0;
 	double shift[4];
 	// sort from 12341234 order in samples into channel arrays
-	for (i = 0; i < 1024* 4 ; i += 4) {
-		fft_samples1[i / 4] = samples[i] * hann[i/4];
-		mean1 += fft_samples1[i / 4];
-		fft_samples2[i / 4] = samples[i + 1] * hann[i/4];
-		mean2 += fft_samples2[i / 4];
-		fft_samples3[i / 4] = samples[i + 2] * hann[i/4];
-		mean3 += fft_samples3[i / 4];
-		fft_samples4[i / 4] = samples[i + 3] * hann[i/4];
-		mean4 += fft_samples4[i / 4];
-		//fprintf(stderr,"%3d %u %u %u %u\n",i/4,samples[i],samples[i+1],samples[i+2],samples[i+3]);
-		//printf("%d %lf\n",i/4,fft_samples[i/4]);
+
+	if(o->windowing){
+	  for (i = 0; i < 1024* numchan ; i += numchan) {
+	    fft_samples1[i / numchan] = samples[i] * hann[i/numchan];
+	    mean1 += fft_samples1[i / numchan];
+	    fft_samples2[i / numchan] = samples[i + ind_chan2] * hann[i/numchan];
+	    mean2 += fft_samples2[i / numchan];
+	    fft_samples3[i / numchan] = samples[i + ind_chan3] * hann[i/numchan];
+	    mean3 += fft_samples3[i / numchan];
+	    fft_samples4[i / numchan] = samples[i + ind_chan4] * hann[i/numchan];
+	    mean4 += fft_samples4[i / numchan];
+	    //fprintf(stderr,"%3d %u %u %u %u\n",i/4,samples[i],samples[i+1],samples[i+2],samples[i+3]);
+	    //printf("%d %lf\n",i/4,fft_samples[i/4]);
+	  }
+	}
+	else {
+	  for (i = 0; i < 1024* numchan ; i += numchan) {
+	    fft_samples1[i / numchan] = samples[i];
+	    mean1 += fft_samples1[i / numchan];
+	    fft_samples2[i / numchan] = samples[i + ind_chan2];
+	    mean2 += fft_samples2[i / numchan];
+	    fft_samples3[i / numchan] = samples[i + ind_chan3];
+	    mean3 += fft_samples3[i / numchan];
+	    fft_samples4[i / numchan] = samples[i + ind_chan4];
+	    mean4 += fft_samples4[i / numchan];
+	  }
 	}
 	mean1 /= 1024;
 	mean2 /= 1024;
@@ -479,8 +504,11 @@ int read_input_file(void) {
 int cmd_parse_options(struct parsed_options *options, int argc, char *argv[]) {
 	int c;
 
-	while (-1 != (c = getopt(argc, argv, "c:m:t:a:h"))) {
+	while (-1 != (c = getopt(argc, argv, "n:c:m:t:a:wh"))) {
 		switch (c) {
+		case 'n':
+		        options->numchan = atoi(optarg);
+			break;
 		case 'c':
 			options->conffile = optarg;
 			break;
@@ -493,16 +521,22 @@ int cmd_parse_options(struct parsed_options *options, int argc, char *argv[]) {
 		case 'a':
 			options->agc = optarg;
 			break;
+	        case 'w':
+            		options->windowing = 0;
+			printf("Hanning window disabled!\n");
+			break;
 		case 'h':
 		default:
 			printf("cmd Options:\n");
+			printf("\t-n <#>\tNumber of channels [Default is 4, but can be 1 or 2]\n");
 			printf("\t-c <file>\tConfig File\n");
 			printf("\t-m <file>\tMonitor Directory\n");
 			printf("\t-t <file>\tTemporary Directory\n");
 			printf("\t-a <##>,[##]\t\tAGC Links\n");
 			printf("\n");
-			printf(
-					"When -a is specified, you can give one or two two-digit pairs #1#2, which will make one or two AGC links between the channels.  In such a case, the output on #1 will be the data from #1 multiplied by #2.  E.g. 32,14 will output 3's\n");
+			printf("When -a is specified, you can give one or two two-digit pairs #1#2, which will make one or two AGC links between the channels.  In such a case, the output on #1 will be the data from #1 multiplied by #2.  E.g. 32,14 will output 3's\n");
+			printf("\n");
+			printf("\t-w Disable Hanning windowing (for diagnostics)\n");
 			exit(1);
 		}
 	}
@@ -516,9 +550,12 @@ int cmd_parse_options(struct parsed_options *options, int argc, char *argv[]) {
 
 void cmd_init_parsed_options(struct parsed_options *options) {
 	memset(options, 0, sizeof(struct parsed_options));
+	options->numchan = 4;
 	options->conffile = "./hf2_config.input";
 	options->mondir = "./";
 	options->tmpdir = "./";
 	options->agc = "";
+	
+	options->windowing = 1;
 }
 

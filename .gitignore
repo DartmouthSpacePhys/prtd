@@ -8,3 +8,9 @@ prtd
 
 # Backups
 *.bak
+
+# pngs
+*.png
+
+# not examples
+!window_example_pngs/*.png
