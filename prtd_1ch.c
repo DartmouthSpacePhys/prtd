@@ -280,7 +280,7 @@ int main(int argc, char **argv) {
 void read_new_samples(void) {
 	FILE *in;
 
-	sprintf(instring,"%s/latest_acquisition.data",data_dir);
+	sprintf(instring,"%s/rtd.data",data_dir);
 	in = fopen(instring, "r");
 	fread(&header, sizeof(header), 1, in);
 
