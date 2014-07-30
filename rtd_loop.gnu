@@ -1,3 +1,3 @@
-pause 0.5
+pause 0.25
 replot
 reread
