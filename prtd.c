@@ -10,6 +10,9 @@
  */
 #define IMAGE_WIDTH 670
 
+#define DEF_TMPDIR "/tmp/rtd"
+#define DEF_PREFIX "test"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -25,6 +28,7 @@ struct parsed_options {
 	char *conffile;
 	char *mondir;
 	char *tmpdir;
+        char *prefix;
 	char *agc;
 	double value;
 
@@ -75,7 +79,7 @@ int gray_min, gray_max, old_gray_min = 0, old_gray_max = 0;
 int write_data = 0;
 unsigned long old_sec = 0, old_usec = 0;
 
-void read_new_samples(void);
+void read_new_samples(struct parsed_options *);
 void fft_new_samples(struct parsed_options *);
 void rescale_images(void);
 
@@ -169,11 +173,11 @@ int main(int argc, char **argv) {
 
 	while (1) {
 		/* read in the new data */
-		read_new_samples();
+		read_new_samples(&options);
 		/* fft the new data */
 		fft_new_samples(&options);
 
-		sprintf(instring,"%s/hf2_display_running",tmp_dir);
+		sprintf(instring,"%s/%s_hf2_display_running", tmp_dir, options.prefix);
 		in = fopen(instring, "r");
 		if (in != NULL) {
 			write_data = 1;
@@ -181,7 +185,7 @@ int main(int argc, char **argv) {
 		} else
 			write_data = 0;
 
-		sprintf(instring,"%s/levels.grayscale",tmp_dir);
+		sprintf(instring,"%s/%s_levels.grayscale", tmp_dir, options.prefix);
 		in = fopen(instring, "r");
 		if (in != NULL) {
 			fscanf(in, "%d %d", &gray_min, &gray_max);
@@ -193,7 +197,7 @@ int main(int argc, char **argv) {
 		if (old_gray_min != gray_min || old_gray_max != gray_max)
 			rescale_images();
 		if (write_data) {
-			sprintf(instring,"%s/test.data",tmp_dir);
+		        sprintf(instring,"%s/%s.data", tmp_dir, options.prefix);
 			out = fopen(instring, "w");
 		} else {
 			printf("hf2_display not running?\n");
@@ -250,25 +254,25 @@ int main(int argc, char **argv) {
 		if (write_data) {
 			fclose(out);
 
-			sprintf(instring,"%s/test.image1",tmp_dir);
+			sprintf(instring,"%s/%s.image1",tmp_dir, options.prefix);
 			image1 = fopen(instring, "w");
 			fprintf(image1, "P5\n%i 512\n255\n",IMAGE_WIDTH);
 			fwrite(im1, sizeof(im1), 1, image1);
 			fclose(image1);
 
-			sprintf(instring,"%s/test.image2",tmp_dir);
+			sprintf(instring,"%s/%s.image2",tmp_dir, options.prefix);
 			image2 = fopen(instring, "w");
 			fprintf(image2, "P5\n%i 512\n255\n",IMAGE_WIDTH);
 			fwrite(im2, sizeof(im2), 1, image2);
 			fclose(image2);
 
-			sprintf(instring,"%s/test.image3",tmp_dir);
+			sprintf(instring,"%s/%s.image3",tmp_dir, options.prefix);
 			image3 = fopen(instring, "w");
 			fprintf(image3, "P5\n%i 512\n255\n",IMAGE_WIDTH);
 			fwrite(im3, sizeof(im3), 1, image3);
 			fclose(image3);
 
-			sprintf(instring,"%s/test.image4",tmp_dir);
+			sprintf(instring,"%s/%s.image4",tmp_dir, options.prefix);
 			image4 = fopen(instring, "w");
 			fprintf(image4, "P5\n%i 512\n255\n",IMAGE_WIDTH);
 			fwrite(im4, sizeof(im4), 1, image4);
@@ -280,10 +284,10 @@ int main(int argc, char **argv) {
 }
 
 /**************** read_new_samples() *************************/
-void read_new_samples(void) {
+void read_new_samples(struct parsed_options *o) {
 	FILE *in;
 
-	sprintf(instring,"%s/rtd.data",data_dir);
+	sprintf(instring,"%s/rtd_%s.data",data_dir, o->prefix);
 	in = fopen(instring, "r");
 	fread(&header, sizeof(header), 1, in);
 	
@@ -299,7 +303,7 @@ void read_new_samples(void) {
 	if (old_sec == header.start_timeval.tv_sec && old_usec
 			== header.start_timeval.tv_usec) {
 		usleep(1e4);
-		read_new_samples();
+		read_new_samples(o);
 	} else {
 //		printf("\nReading new samples");
 		/*
@@ -504,7 +508,7 @@ int read_input_file(void) {
 int cmd_parse_options(struct parsed_options *options, int argc, char *argv[]) {
 	int c;
 
-	while (-1 != (c = getopt(argc, argv, "n:c:m:t:a:wh"))) {
+	while (-1 != (c = getopt(argc, argv, "n:c:m:t:a:o:wh"))) {
 		switch (c) {
 		case 'n':
 		        options->numchan = atoi(optarg);
@@ -521,6 +525,9 @@ int cmd_parse_options(struct parsed_options *options, int argc, char *argv[]) {
 		case 'a':
 			options->agc = optarg;
 			break;
+		case 'o':
+			options->prefix = optarg;
+			break;
 	        case 'w':
             		options->windowing = 0;
 			printf("Hanning window disabled!\n");
@@ -532,6 +539,7 @@ int cmd_parse_options(struct parsed_options *options, int argc, char *argv[]) {
 			printf("\t-c <file>\tConfig File\n");
 			printf("\t-m <file>\tMonitor Directory\n");
 			printf("\t-t <file>\tTemporary Directory\n");
+			printf("\t-o <s>\tSet output file prefix [%s].\n", DEF_PREFIX);
 			printf("\t-a <##>,[##]\t\tAGC Links\n");
 			printf("\n");
 			printf("When -a is specified, you can give one or two two-digit pairs #1#2, which will make one or two AGC links between the channels.  In such a case, the output on #1 will be the data from #1 multiplied by #2.  E.g. 32,14 will output 3's\n");
@@ -553,7 +561,8 @@ void cmd_init_parsed_options(struct parsed_options *options) {
 	options->numchan = 4;
 	options->conffile = "./hf2_config.input";
 	options->mondir = "./";
-	options->tmpdir = "./";
+	options->tmpdir = DEF_TMPDIR;
+	options->prefix = DEF_PREFIX;
 	options->agc = "";
 	
 	options->windowing = 1;
