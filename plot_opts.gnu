@@ -1,4 +1,5 @@
 #set terminal wxt size 800,600
+set terminal wxt
 
 #For making a gif animation
 #set term gif animate

@@ -6,6 +6,9 @@ OPREFIX="test"
 
 PRTD="prtd"
 
+RTD_DIR="/tmp/rtd"
+RTDF="rtd.data"
+
 if [ $1 ] 
 then if [ $1 -le 4 ]
     then NCHAN=${1} 
