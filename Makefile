@@ -3,9 +3,9 @@ CFLAGS = -std=gnu99 -pipe -O2 -Wall
 LDFLAGS = -pipe -Wall -Wno-unused-result -L/opt/local/lib
 LDLIBS = -lfftw3 -lm
 
-SOURCES = prtd.c prtd_1ch.c prtd_2ch.c #dynprtd.c dynprtd_helpers.c
+SOURCES = prtd.c prtd_1ch.c prtd_2ch.c prtd_8bit.c #dynprtd.c dynprtd_helpers.c
 OBJECTS = $(SOURCES:.c=.o)
-EXECS = prtd prtd_1ch prtd_2ch #dynprtd
+EXECS = prtd prtd_1ch prtd_2ch prtd_8bit #dynprtd
 
 all: $(SOURCES) $(EXECS)
 
