@@ -67,7 +67,7 @@ float a, b;
 float v1, v2, v3, v4;
 float r1, r2, r3, r4;
 float x[512];
-float df = 5e3 / 512.;
+float df = 10e3 / 512.;
 
 unsigned char im1[512][IMAGE_WIDTH];
 unsigned char im2[512][IMAGE_WIDTH];

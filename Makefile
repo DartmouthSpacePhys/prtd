@@ -21,8 +21,11 @@ prtd_1ch: prtd_1ch.o
 prtd_2ch: prtd_2ch.o
 	$(CC) -o $@ $(LDFLAGS) $^ $(LDLIBS)
 
+prtd_8bit: prtd_8bit.o
+	$(CC) -o $@ $(LDFLAGS) $^ $(LDLIBS)
+
 .c.o:
 	$(CC) -o $@ $(CFLAGS) -c $<
 
 clean:
-	rm *.o $(EXECS)
+	rm *.o 
