@@ -54,7 +54,7 @@ static struct header_info {
 	float code_version;
 } header;
 
-uint8_t *samples;
+int8_t *samples;
 //double fft_samples1[1024], fft_samples2[1024], fft_samples3[1024], fft_samples4[1024];
 double *fft_samples1, *fft_samples2, *fft_samples3, *fft_samples4;
 //double out1[1024], out2[1024], out3[1024], out4[1024];
