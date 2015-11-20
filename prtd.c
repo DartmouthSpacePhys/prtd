@@ -213,10 +213,10 @@ int main(int argc, char **argv) {
 			r2 = out2[i];
 			r3 = out3[i];
 			r4 = out4[i];
-			im1o[512 - i][IMAGE_WIDTH-1] = r1;
-			im2o[512 - i][IMAGE_WIDTH-1] = r2;
-			im3o[512 - i][IMAGE_WIDTH-1] = r3;
-			im4o[512 - i][IMAGE_WIDTH-1] = r4;
+			im1o[512 - i-1][IMAGE_WIDTH-1] = r1;
+			im2o[512 - i-1][IMAGE_WIDTH-1] = r2;
+			im3o[512 - i-1][IMAGE_WIDTH-1] = r3;
+			im4o[512 - i-1][IMAGE_WIDTH-1] = r4;
 			v1 = a + r1 * b + 0.5;
 			v2 = a + r2 * b + 0.5;
 			v3 = a + r3 * b + 0.5;
@@ -283,7 +283,7 @@ int main(int argc, char **argv) {
 void read_new_samples(void) {
 	FILE *in;
 
-	sprintf(instring,"%s/latest_acquisition.data",data_dir);
+	sprintf(instring,"%s/rtd.data",data_dir);
 	in = fopen(instring, "r");
 	fread(&header, sizeof(header), 1, in);
 	

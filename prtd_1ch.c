@@ -165,6 +165,7 @@ int main(int argc, char **argv) {
 
 
 	while (1) {
+		printf("lskdjfldjasf\n"); fflush(stdout);
 		/* read in the new data */
 		read_new_samples();
 		/* fft the new data */
@@ -197,6 +198,7 @@ int main(int argc, char **argv) {
 		}
 
 		for (i = 0; i < 512; i++) {
+			printf("a");fflush(stdout);
 			x[i] = i * df;
 			memcpy(*(im1+i),&im1[i][1],IMAGE_WIDTH-1);
 			memcpy(*(im2+i),&im2[i][1],IMAGE_WIDTH-1);
@@ -242,6 +244,7 @@ int main(int argc, char **argv) {
 
 			if (write_data)
 				fprintf(out, "%.0f %.2f %.2f %.2f\n", x[i], r1, r2, r3);
+			printf("b\n");fflush(stdout);
 		}
 
 		if (write_data) {
@@ -280,7 +283,7 @@ int main(int argc, char **argv) {
 void read_new_samples(void) {
 	FILE *in;
 
-	sprintf(instring,"%s/latest_acquisition.data",data_dir);
+	sprintf(instring,"%s/rtd.data",data_dir);
 	in = fopen(instring, "r");
 	fread(&header, sizeof(header), 1, in);
 
@@ -293,9 +296,11 @@ void read_new_samples(void) {
 
 	fclose(in);
 
+	printf("fffffffffffff\n");fflush(stdout);
 	if (old_sec == header.start_timeval.tv_sec && old_usec
 			== header.start_timeval.tv_usec) {
 		usleep(1e4);
+		printf("2nd\n");fflush(stdout);
 		read_new_samples();
 	} else {
 //		printf("\nReading new samples");
@@ -322,6 +327,7 @@ void read_new_samples(void) {
 		old_usec = header.start_timeval.tv_usec;
 		return;
 	}
+
 	return;
 }
 

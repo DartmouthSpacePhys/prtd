@@ -1,6 +1,6 @@
 CC = gcc
-CFLAGS = -std=gnu99 -pipe -O2 -Wall
-LDFLAGS = -pipe -Wall -Wno-unused-result -L/opt/local/lib
+CFLAGS = -std=gnu99 -g -pipe -O2 -Wall -Wno-unused-result
+LDFLAGS = -pipe -g -Wall -Wno-unused-result -L/opt/local/lib
 LDLIBS = -lfftw3 -lm
 
 SOURCES = prtd.c prtd_1ch.c prtd_2ch.c #dynprtd.c dynprtd_helpers.c
